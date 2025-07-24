@@ -4,6 +4,11 @@ use crate::ast::*;
 grammar;
 
 pub Expr: Expr = {
+    CondExpr,
+}
+
+CondExpr: Expr = {
+    <cond: OrExpr> "?" <then: Expr> ":" <els: Expr> => Expr::Conditional(Box::new(cond), Box::new(then), Box::new(els)),
     OrExpr,
 }
 
@@ -83,5 +88,7 @@ extern {
         "!" => Token::Not,
         "(" => Token::LParen,
         ")" => Token::RParen,
+        "?" => Token::Question,
+        ":" => Token::Colon,
     }
 }

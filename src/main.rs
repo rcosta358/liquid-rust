@@ -10,7 +10,7 @@ mod lexer;
 mod ast;
 
 fn main() {
-    let input = "1 + 2.5 * (3 - 4)";
+    let input = "x > 0 ? y : z";
     match parse_expr(input) {
         Ok(expr) => println!("{:#?}", expr),
         Err(e) => eprintln!("Parse error: {:?}", e),

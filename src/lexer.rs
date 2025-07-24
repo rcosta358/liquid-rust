@@ -52,6 +52,12 @@ pub enum Token {
     #[token(")")]
     RParen,
 
+    #[token("?")]
+    Question,
+
+    #[token(":")]
+    Colon,
+
     #[token("true")]
     True,
 
