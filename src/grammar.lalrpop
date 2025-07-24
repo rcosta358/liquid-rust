@@ -1,0 +1,87 @@
+use crate::lexer::Token;
+use crate::ast::*;
+
+grammar;
+
+pub Expr: Expr = {
+    OrExpr,
+}
+
+OrExpr: Expr = {
+    <lhs: OrExpr> "||" <rhs: AndExpr> => Expr::Binary(Box::new(lhs), BinOp::Or, Box::new(rhs)),
+    AndExpr,
+}
+
+AndExpr: Expr = {
+    <lhs: AndExpr> "&&" <rhs: EqExpr> => Expr::Binary(Box::new(lhs), BinOp::And, Box::new(rhs)),
+    EqExpr,
+}
+
+EqExpr: Expr = {
+    <lhs: EqExpr> "==" <rhs: RelExpr> => Expr::Binary(Box::new(lhs), BinOp::Eq, Box::new(rhs)),
+    <lhs: EqExpr> "!=" <rhs: RelExpr> => Expr::Binary(Box::new(lhs), BinOp::Neq, Box::new(rhs)),
+    RelExpr,
+}
+
+RelExpr: Expr = {
+    <lhs: RelExpr> "<" <rhs: AddExpr> => Expr::Binary(Box::new(lhs), BinOp::Lt, Box::new(rhs)),
+    <lhs: RelExpr> ">" <rhs: AddExpr> => Expr::Binary(Box::new(lhs), BinOp::Gt, Box::new(rhs)),
+    <lhs: RelExpr> "<=" <rhs: AddExpr> => Expr::Binary(Box::new(lhs), BinOp::Le, Box::new(rhs)),
+    <lhs: RelExpr> ">=" <rhs: AddExpr> => Expr::Binary(Box::new(lhs), BinOp::Ge, Box::new(rhs)),
+    AddExpr,
+}
+
+AddExpr: Expr = {
+    <lhs: AddExpr> "+" <rhs: MulExpr> => Expr::Binary(Box::new(lhs), BinOp::Add, Box::new(rhs)),
+    <lhs: AddExpr> "-" <rhs: MulExpr> => Expr::Binary(Box::new(lhs), BinOp::Sub, Box::new(rhs)),
+    MulExpr,
+}
+
+MulExpr: Expr = {
+    <lhs: MulExpr> "*" <rhs: UnaryExpr> => Expr::Binary(Box::new(lhs), BinOp::Mul, Box::new(rhs)),
+    <lhs: MulExpr> "/" <rhs: UnaryExpr> => Expr::Binary(Box::new(lhs), BinOp::Div, Box::new(rhs)),
+    UnaryExpr,
+}
+
+UnaryExpr: Expr = {
+    "-" <rhs: UnaryExpr> => Expr::Unary(UnOp::Neg, Box::new(rhs)),
+    "!" <rhs: UnaryExpr> => Expr::Unary(UnOp::Not, Box::new(rhs)),
+    PrimaryExpr,
+}
+
+PrimaryExpr: Expr = {
+    "(" <e: Expr> ")" => e,
+    "id" => Expr::Id(<>.to_string()),
+    "int" => Expr::Number(<>.to_string().parse().unwrap()),
+    "float" => Expr::Number(<>.to_string().parse().unwrap()),
+    "true" => Expr::Bool(true),
+    "false" => Expr::Bool(false),
+}
+
+extern {
+    type Location = usize;
+    type Error = String;
+
+    enum Token {
+        "id" => Token::Id(<String>),
+        "int" => Token::Int(<i64>),
+        "float" => Token::Float(<f64>),
+        "true" => Token::True,
+        "false" => Token::False,
+        "||" => Token::Or,
+        "&&" => Token::And,
+        "==" => Token::Eq,
+        "!=" => Token::Neq,
+        "<=" => Token::Le,
+        ">=" => Token::Ge,
+        "<" => Token::Lt,
+        ">" => Token::Gt,
+        "+" => Token::Plus,
+        "-" => Token::Minus,
+        "*" => Token::Mul,
+        "/" => Token::Div,
+        "!" => Token::Not,
+        "(" => Token::LParen,
+        ")" => Token::RParen,
+    }
+}
