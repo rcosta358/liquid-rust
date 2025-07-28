@@ -7,7 +7,7 @@ pub enum Expr {
     Binary(Box<Expr>, BinOp, Box<Expr>),
     Unary(UnOp, Box<Expr>),
     Conditional(Box<Expr>, Box<Expr>, Box<Expr>),
-    // maybe add more expressions later like field access, array indexing, function calls, etc.
+    // ...
 }
 
 #[derive(Debug, Clone, PartialEq)]
