@@ -15,9 +15,8 @@ pub fn check_refinement(refinement: &Expr, value: &syn::Expr) -> Result<(), Stri
         solver.assert(&var._eq(&val_ast));
     }
 
-    // assert the result of the refinement
+    // assert and check the result of the refinement
     solver.assert(&z3_result);
-    
     if solver.check() == SatResult::Unsat {
         Err("Value does not satisfy the refinement".into())
     } else {
@@ -27,7 +26,6 @@ pub fn check_refinement(refinement: &Expr, value: &syn::Expr) -> Result<(), Stri
 
 fn to_z3<'ctx>(ctx: &'ctx Context, expr: &Expr, var: &Real<'ctx>) -> Result<Bool<'ctx>, String> {
     match expr {
-        Expr::Binary(_, BinOp::Add | BinOp::Sub | BinOp::Mul | BinOp::Div | BinOp::Mod, _) => Err("Non-boolean expression".into()),
         Expr::Binary(left, op, right) => {
             let res = match op {
                 BinOp::And => {
@@ -46,7 +44,7 @@ fn to_z3<'ctx>(ctx: &'ctx Context, expr: &Expr, var: &Real<'ctx>) -> Result<Bool
                 BinOp::Ge => to_real(ctx, left, var).ge(&to_real(ctx, right, var)),
                 BinOp::Lt => to_real(ctx, left, var).lt(&to_real(ctx, right, var)),
                 BinOp::Le => to_real(ctx, left, var).le(&to_real(ctx, right, var)),
-                _ => unreachable!(),
+                BinOp::Add | BinOp::Sub | BinOp::Mul | BinOp::Div | BinOp::Mod => return Err("Non-boolean expression".into()),
             };
             Ok(res)
         }
@@ -81,33 +79,38 @@ fn to_real<'ctx>(ctx: &'ctx Context, expr: &Expr, var: &Real<'ctx>) -> Real<'ctx
             let x = to_real(ctx, inner, var);
             Real::sub(ctx, &[&Real::from_real(ctx, 0, 1), &x])
         }
-        Expr::Binary(left, BinOp::Add, right) => {
-            let l = to_real(ctx, left, var);
-            let r = to_real(ctx, right, var);
-            Real::add(ctx, &[&l, &r])
-        }
-        Expr::Binary(left, BinOp::Sub, right) => {
-            let l = to_real(ctx, left, var);
-            let r = to_real(ctx, right, var);
-            Real::sub(ctx, &[&l, &r])
-        }
-        Expr::Binary(left, BinOp::Mul, right) => {
-            let l = to_real(ctx, left, var);
-            let r = to_real(ctx, right, var);
-            Real::mul(ctx, &[&l, &r])
-        }
-        Expr::Binary(left, BinOp::Div, right) => {
-            let l = to_real(ctx, left, var);
-            let r = to_real(ctx, right, var);
-            l.div(&r)
-        }
-        Expr::Binary(left, BinOp::Mod, right) => {
-            let a = to_real(ctx, left, var);
-            let b = to_real(ctx, right, var);
-            let frac = a.div(&b);
-            let floored_int = z3::ast::Int::from_real(&frac);
-            let floored_r = z3::ast::Int::to_real(&floored_int);
-            Real::sub(ctx, &[&a, &Real::mul(ctx, &[&floored_r, &b])])
+        Expr::Binary(left, op, right) => {
+            match op {
+                BinOp::Add => {
+                    let l = to_real(ctx, left, var);
+                    let r = to_real(ctx, right, var);
+                    Real::add(ctx, &[&l, &r])
+                }
+                BinOp::Sub => {
+                    let l = to_real(ctx, left, var);
+                    let r = to_real(ctx, right, var);
+                    Real::sub(ctx, &[&l, &r])
+                }
+                BinOp::Mul => {
+                    let l = to_real(ctx, left, var);
+                    let r = to_real(ctx, right, var);
+                    Real::mul(ctx, &[&l, &r])
+                }
+                BinOp::Div => {
+                    let l = to_real(ctx, left, var);
+                    let r = to_real(ctx, right, var);
+                    l.div(&r)
+                }
+                BinOp::Mod => {
+                    let a = to_real(ctx, left, var);
+                    let b = to_real(ctx, right, var);
+                    let frac = a.div(&b);
+                    let floored_int = z3::ast::Int::from_real(&frac);
+                    let floored_r = z3::ast::Int::to_real(&floored_int);
+                    Real::sub(ctx, &[&a, &Real::mul(ctx, &[&floored_r, &b])])
+                }
+                _ => Real::from_real(ctx, 0, 1),
+            }
         }
         _ => Real::from_real(ctx, 0, 1),
     }
@@ -115,7 +118,7 @@ fn to_real<'ctx>(ctx: &'ctx Context, expr: &Expr, var: &Real<'ctx>) -> Real<'ctx
 
 fn value_as_real<'ctx>(ctx: &'ctx Context, value: &syn::Expr) -> Option<Real<'ctx>> {
     match value {
-        syn::Expr::Lit(lit) => match &lit.lit {
+        syn::Expr::Lit(lit) => match &lit.lit { // literals
             syn::Lit::Int(n) => Some(Real::from_real(ctx, n.base10_parse::<i32>().unwrap(), 1)),
             _ => None,
         },
