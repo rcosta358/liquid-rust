@@ -1,14 +1,14 @@
 use z3::{ast::{Ast, Bool, Real}, Config, Context, SatResult, Solver};
 use parser::ast::{BinOp, Expr, UnOp};
 
-pub fn check_refinement(refinement: &Expr, value: &syn::Expr) -> bool {
+pub fn check_refinement(refinement: &Expr, value: &syn::Expr) -> Result<(), String> {
     let cfg = Config::new();
     let ctx = Context::new(&cfg);
     let solver = Solver::new(&ctx);
     let var = Real::new_const(&ctx, "_");
 
     // translate ast to z3 boolean
-    let z3_result = to_z3(&ctx, refinement, &var);
+    let z3_result = to_z3(&ctx, refinement, &var)?;
 
     // assign the value as a z3 constant to the "_" variable
     if let Some(val_ast) = value_as_real(&ctx, value) {
@@ -17,22 +17,27 @@ pub fn check_refinement(refinement: &Expr, value: &syn::Expr) -> bool {
 
     // assert the result of the refinement
     solver.assert(&z3_result);
-    solver.check() == SatResult::Unsat
+    
+    if solver.check() == SatResult::Unsat {
+        Err("Value does not satisfy the refinement".into())
+    } else {
+        Ok(())
+    }
 }
 
-fn to_z3<'ctx>(ctx: &'ctx Context, expr: &Expr, var: &Real<'ctx>) -> Bool<'ctx> {
+fn to_z3<'ctx>(ctx: &'ctx Context, expr: &Expr, var: &Real<'ctx>) -> Result<Bool<'ctx>, String> {
     match expr {
-        Expr::Binary(_, BinOp::Add | BinOp::Sub | BinOp::Mul | BinOp::Div | BinOp::Mod, _) => panic!("non-boolean expression"),
+        Expr::Binary(_, BinOp::Add | BinOp::Sub | BinOp::Mul | BinOp::Div | BinOp::Mod, _) => Err("Non-boolean expression".into()),
         Expr::Binary(left, op, right) => {
-            match op {
+            let res = match op {
                 BinOp::And => {
-                    let l = to_z3(ctx, left, var);
-                    let r = to_z3(ctx, right, var);
+                    let l = to_z3(ctx, left, var)?;
+                    let r = to_z3(ctx, right, var)?;
                     Bool::and(ctx, &[&l, &r])
                 }
                 BinOp::Or => {
-                    let l = to_z3(ctx, left, var);
-                    let r = to_z3(ctx, right, var);
+                    let l = to_z3(ctx, left, var)?;
+                    let r = to_z3(ctx, right, var)?;
                     Bool::or(ctx, &[&l, &r])
                 }
                 BinOp::Eq => to_real(ctx, left, var)._eq(&to_real(ctx, right, var)),
@@ -42,26 +47,29 @@ fn to_z3<'ctx>(ctx: &'ctx Context, expr: &Expr, var: &Real<'ctx>) -> Bool<'ctx> 
                 BinOp::Lt => to_real(ctx, left, var).lt(&to_real(ctx, right, var)),
                 BinOp::Le => to_real(ctx, left, var).le(&to_real(ctx, right, var)),
                 _ => unreachable!(),
-            }
+            };
+            Ok(res)
         }
         Expr::Unary(op, inner) => {
-           match op {
-                UnOp::Not => to_z3(ctx, inner, var).not(),
+            let res = match op {
+                UnOp::Not => to_z3(ctx, inner, var)?.not(),
                 UnOp::Neg => {
                     let inner_real = to_real(ctx, inner, var);
                     let zero = Real::from_real(ctx, 0, 1);
                     inner_real._eq(&zero).not()
                 }
-           }
+            };
+            Ok(res)
         }
         Expr::Conditional(cond, then, els) => {
-            let cond_bool = to_z3(ctx, cond, var);
-            let then_bool = to_z3(ctx, then, var);
-            let else_bool = to_z3(ctx, els, var);
-            Bool::ite(&cond_bool, &then_bool, &else_bool)
+            let cond_bool = to_z3(ctx, cond, var)?;
+            let then_bool = to_z3(ctx, then, var)?;
+            let else_bool = to_z3(ctx, els, var)?;
+            let res = Bool::ite(&cond_bool, &then_bool, &else_bool);
+            Ok(res)
         }
-        Expr::Bool(b) => Bool::from_bool(ctx, *b),
-        _ => panic!("non-boolean expression"),
+        Expr::Bool(b) => Ok(Bool::from_bool(ctx, *b)),
+        _ => Err("Non-boolean expression".into()),
     }
 }
 

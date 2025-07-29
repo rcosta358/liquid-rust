@@ -25,11 +25,10 @@ pub fn refine(input: TokenStream) -> TokenStream {
     let RefineArgs { refinement, value, .. } = syn::parse_macro_input!(input as RefineArgs);
     let refinement_str = refinement.value();
     let refinement_ast = parse_expr(&refinement_str).expect("Failed to parse refinement expression");
-    let unsatisfied = check_refinement(&refinement_ast, &value);
-    let expanded = if unsatisfied {
-        quote! { compile_error!("Value does not satisfy the refinement"); }
+    let result = check_refinement(&refinement_ast, &value);
+    if let Err(e) = result {
+        quote! { compile_error!(#e); }.into()
     } else {
-        quote! { #value }
-    };
-    expanded.into()
+        quote! { #value }.into()
+    }
 }

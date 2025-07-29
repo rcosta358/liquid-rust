@@ -35,3 +35,5 @@ fn main() {
     println!("{}", val4);
 }
 ```
+
+**Note:** This is not a practical project to be used, it is just a fun experiment to learn more about this topic.
