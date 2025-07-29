@@ -21,7 +21,7 @@ The goal of this project is to get more familiar with liquid types and the Z3 SM
 ### Example
 
 ```rust
-use api::refine;
+use liquid_rust::refine;
 
 fn main() {
     let val1 = refine!("(_ > 0 && _ < 10) || _ == -1", -1); // between 0 and 10 or exactly -1
@@ -35,5 +35,7 @@ fn main() {
     println!("{}", val4);
 }
 ```
+
+<br />
 
 **Note:** This is not a practical project to be used, it is just a fun experiment to learn more about this topic.
