@@ -1,4 +1,7 @@
-use liquid_rust::refine;
+use liquid_rust::{refinement, refine};
+
+#[refinement("_ > 0")]
+const X: i32 = 1;
 
 fn main() {
     let val1 = refine!("(_ > 0 && _ < 10) || _ == -1", -1); // between 0 and 10 or exactly -1
@@ -10,5 +13,5 @@ fn main() {
     println!("{}", val2);
     println!("{}", val3);
     println!("{}", val4);
+    println!("{}", X);
 }
-
