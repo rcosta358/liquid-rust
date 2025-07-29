@@ -1,7 +1,7 @@
 [workspace]
 members = [
     "parser",
-    "proc_macros",
+    "api",
     "checker",
     "demo",
 ]

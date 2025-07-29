@@ -18,5 +18,6 @@ pub fn parse_expr(input: &str) -> Result<Expr, ParseError<usize, Token, String>>
             Err(e) => Err(format!("{:?}", e)),
         }
     });
-    ExprParser::new().parse(tokens)
+    let parser = ExprParser::new();
+    parser.parse(tokens)
 }

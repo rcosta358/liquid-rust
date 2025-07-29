@@ -45,6 +45,7 @@ AddExpr: Expr = {
 MulExpr: Expr = {
     <lhs: MulExpr> "*" <rhs: UnaryExpr> => Expr::Binary(Box::new(lhs), BinOp::Mul, Box::new(rhs)),
     <lhs: MulExpr> "/" <rhs: UnaryExpr> => Expr::Binary(Box::new(lhs), BinOp::Div, Box::new(rhs)),
+    <lhs: MulExpr> "%" <rhs: UnaryExpr> => Expr::Binary(Box::new(lhs), BinOp::Mod, Box::new(rhs)),
     UnaryExpr,
 }
 
@@ -85,6 +86,7 @@ extern {
         "-" => Token::Minus,
         "*" => Token::Mul,
         "/" => Token::Div,
+        "%" => Token::Mod,
         "!" => Token::Not,
         "(" => Token::LParen,
         ")" => Token::RParen,
