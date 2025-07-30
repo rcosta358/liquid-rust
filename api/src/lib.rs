@@ -43,17 +43,15 @@ pub fn refinement(attr: TokenStream, item: TokenStream) -> TokenStream {
     let refinement_lit = parse_macro_input!(attr as LitStr);
     let refinement_str = refinement_lit.value();
     match parse_macro_input!(item as Item) {
-        Item::Const(mut const_item) => {
-            // wrap the const’s initializer in a refine! call
-            let orig = *const_item.expr;
-            const_item.expr = Box::new(syn::parse_quote! {
+        Item::Const(mut item) => { // wrap the const’s initializer in a refine! macro call
+            let orig = *item.expr;
+            item.expr = Box::new(syn::parse_quote! {
                 refine!(#refinement_str, #orig)
             });
-            quote!(#const_item).into()
+            quote!(#item).into()
         }
-        other => {
-            let err = syn::Error::new_spanned(other, "`#[refine]` not supported on this item").to_compile_error();
-            quote!(#err).into()
-        }
+        _ => quote! {
+            compile_error!("The macro attribute `#[refinement(...)]` cannot be used here");
+        }.into()
     }
 }

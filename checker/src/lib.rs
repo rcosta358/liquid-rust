@@ -8,7 +8,7 @@ pub fn check_refinement(refinement: &Expr, value: &syn::Expr) -> Result<(), Stri
     let var = Real::new_const(&ctx, "_");
 
     // translate ast to z3 boolean
-    let z3_result = to_z3(&ctx, refinement, &var)?;
+    let z3_result = to_z3_bool(&ctx, refinement, &var)?;
 
     // assign the value as a z3 constant to the "_" variable
     if let Some(val_ast) = value_as_real(&ctx, value) {
@@ -24,18 +24,18 @@ pub fn check_refinement(refinement: &Expr, value: &syn::Expr) -> Result<(), Stri
     }
 }
 
-fn to_z3<'ctx>(ctx: &'ctx Context, expr: &Expr, var: &Real<'ctx>) -> Result<Bool<'ctx>, String> {
+fn to_z3_bool<'ctx>(ctx: &'ctx Context, expr: &Expr, var: &Real<'ctx>) -> Result<Bool<'ctx>, String> {
     match expr {
         Expr::Binary(left, op, right) => {
             let res = match op {
                 BinOp::And => {
-                    let l = to_z3(ctx, left, var)?;
-                    let r = to_z3(ctx, right, var)?;
+                    let l = to_z3_bool(ctx, left, var)?;
+                    let r = to_z3_bool(ctx, right, var)?;
                     Bool::and(ctx, &[&l, &r])
                 }
                 BinOp::Or => {
-                    let l = to_z3(ctx, left, var)?;
-                    let r = to_z3(ctx, right, var)?;
+                    let l = to_z3_bool(ctx, left, var)?;
+                    let r = to_z3_bool(ctx, right, var)?;
                     Bool::or(ctx, &[&l, &r])
                 }
                 BinOp::Eq => to_real(ctx, left, var)._eq(&to_real(ctx, right, var)),
@@ -50,7 +50,7 @@ fn to_z3<'ctx>(ctx: &'ctx Context, expr: &Expr, var: &Real<'ctx>) -> Result<Bool
         }
         Expr::Unary(op, inner) => {
             let res = match op {
-                UnOp::Not => to_z3(ctx, inner, var)?.not(),
+                UnOp::Not => to_z3_bool(ctx, inner, var)?.not(),
                 UnOp::Neg => {
                     let inner_real = to_real(ctx, inner, var);
                     let zero = from_real(ctx, 0);
@@ -60,9 +60,9 @@ fn to_z3<'ctx>(ctx: &'ctx Context, expr: &Expr, var: &Real<'ctx>) -> Result<Bool
             Ok(res)
         }
         Expr::Conditional(cond, then, els) => {
-            let cond_bool = to_z3(ctx, cond, var)?;
-            let then_bool = to_z3(ctx, then, var)?;
-            let else_bool = to_z3(ctx, els, var)?;
+            let cond_bool = to_z3_bool(ctx, cond, var)?;
+            let then_bool = to_z3_bool(ctx, then, var)?;
+            let else_bool = to_z3_bool(ctx, els, var)?;
             let res = Bool::ite(&cond_bool, &then_bool, &else_bool);
             Ok(res)
         }
@@ -76,38 +76,22 @@ fn to_real<'ctx>(ctx: &'ctx Context, expr: &Expr, var: &Real<'ctx>) -> Real<'ctx
         Expr::Id => var.clone(),
         Expr::Int(n) => from_real(ctx, (*n) as i32),
         Expr::Unary(UnOp::Neg, inner) => {
-            let x = to_real(ctx, inner, var);
-            Real::sub(ctx, &[&from_real(ctx, 0), &x])
+            let value = to_real(ctx, inner, var);
+            Real::sub(ctx, &[&from_real(ctx, 0), &value])
         }
         Expr::Binary(left, op, right) => {
+            let l = to_real(ctx, left, var);
+            let r = to_real(ctx, right, var);
             match op {
-                BinOp::Add => {
-                    let l = to_real(ctx, left, var);
-                    let r = to_real(ctx, right, var);
-                    Real::add(ctx, &[&l, &r])
-                }
-                BinOp::Sub => {
-                    let l = to_real(ctx, left, var);
-                    let r = to_real(ctx, right, var);
-                    Real::sub(ctx, &[&l, &r])
-                }
-                BinOp::Mul => {
-                    let l = to_real(ctx, left, var);
-                    let r = to_real(ctx, right, var);
-                    Real::mul(ctx, &[&l, &r])
-                }
-                BinOp::Div => {
-                    let l = to_real(ctx, left, var);
-                    let r = to_real(ctx, right, var);
-                    l.div(&r)
-                }
+                BinOp::Add => Real::add(ctx, &[&l, &r]),
+                BinOp::Sub => Real::sub(ctx, &[&l, &r]),
+                BinOp::Mul => Real::mul(ctx, &[&l, &r]),
+                BinOp::Div => l.div(&r),
                 BinOp::Mod => {
-                    let a = to_real(ctx, left, var);
-                    let b = to_real(ctx, right, var);
-                    let frac = a.div(&b);
+                    let frac = l.div(&r);
                     let floored_int = z3::ast::Int::from_real(&frac);
                     let floored_r = z3::ast::Int::to_real(&floored_int);
-                    Real::sub(ctx, &[&a, &Real::mul(ctx, &[&floored_r, &b])])
+                    Real::sub(ctx, &[&l, &Real::mul(ctx, &[&floored_r, &r])])
                 }
                 _ => from_real(ctx, 0)
             }
