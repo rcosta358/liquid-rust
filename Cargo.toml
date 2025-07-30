@@ -3,5 +3,5 @@ members = [
     "parser",
     "api",
     "checker",
-    "demo",
+    "example",
 ]
