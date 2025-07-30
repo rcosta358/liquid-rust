@@ -73,8 +73,8 @@ fn to_z3<'ctx>(ctx: &'ctx Context, expr: &Expr, var: &Real<'ctx>) -> Result<Bool
 
 fn to_real<'ctx>(ctx: &'ctx Context, expr: &Expr, var: &Real<'ctx>) -> Real<'ctx> {
     match expr {
-        Expr::Id(name) if name == "_" => var.clone(),
-        Expr::Number(n) => Real::from_real(ctx, (*n) as i32, 1),
+        Expr::Id => var.clone(),
+        Expr::Int(n) => Real::from_real(ctx, (*n) as i32, 1),
         Expr::Unary(UnOp::Neg, inner) => {
             let x = to_real(ctx, inner, var);
             Real::sub(ctx, &[&Real::from_real(ctx, 0, 1), &x])

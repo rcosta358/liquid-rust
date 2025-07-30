@@ -64,20 +64,16 @@ pub enum Token {
     #[token("false")]
     False,
 
-    #[regex(r"[0-9]+", priority = 2, callback = |lex| lex.slice().parse().map_err(|_| LexicalError::InvalidInteger))]
-    Int(i64),
-    
-    #[regex(r"[0-9]+(\.[0-9]+)?", priority = 1, callback = |lex| lex.slice().parse().map_err(|_| LexicalError::InvalidFloat))]
-    Float(f64),
+    #[token("_")]
+    Id,
 
-    #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*", |lex| lex.slice().to_string())]
-    Id(String),
+    #[regex(r"[0-9]+", |lex| lex.slice().parse().map_err(|_| LexicalError::InvalidInteger))]
+    Int(i64),
 }
 
 #[derive(Default, Debug, Clone, PartialEq)]
 pub enum LexicalError {
     InvalidInteger,
-    InvalidFloat,
     #[default]
     UnrecognizedToken,
 }

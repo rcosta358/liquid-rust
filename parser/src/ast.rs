@@ -1,13 +1,12 @@
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
-    Number(f64),
-    Id(String),
+    Id,
+    Int(i64),
     Bool(bool),
     Binary(Box<Expr>, BinOp, Box<Expr>),
     Unary(UnOp, Box<Expr>),
     Conditional(Box<Expr>, Box<Expr>, Box<Expr>),
-    // ...
 }
 
 #[derive(Debug, Clone, PartialEq)]

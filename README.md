@@ -12,8 +12,8 @@
 
 ---
 
-Very simple liquid type checker for Rust that performs straightforward compile-time checks for numerical constants using the `refine!` procedural macro.
-Uses Logos and LALRPOP to parse the refinement string into a tiny AST and translates it into SMT formulas using the Z3 SMT solver.
+Very simple liquid type checker for Rust that performs straightforward compile-time checks for integer literals.
+Uses Logos and LALRPOP to parse the refinement string into a tiny AST and translates it into SMT formulas using the Z3 SMT solver. 
 
 ### Examples
 
@@ -39,10 +39,10 @@ const X: i32 = 1;
 ```
 
 ### Limitations
-- Only supports numerical constants
-- Checks made only at definition
-- No support for runtime checks
+- Support for integer literals only
+- Checks made only at variable definition
+- Very limited set of operations
 
 <br />
 
-This is not a practical project to be used, as it is no useful at all. It is just a fun experiment to learn more about this topic.
+This is not intended for production use, as it is not useful at all - it is just a fun experiment to learn more about this topic.

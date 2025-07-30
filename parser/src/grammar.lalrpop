@@ -57,9 +57,8 @@ UnaryExpr: Expr = {
 
 PrimaryExpr: Expr = {
     "(" <e: Expr> ")" => e,
-    "id" => Expr::Id(<>.to_string()),
-    "int" => Expr::Number(<>.to_string().parse().unwrap()),
-    "float" => Expr::Number(<>.to_string().parse().unwrap()),
+    "id" => Expr::Id,
+    "int" => Expr::Int(<>.to_string().parse().unwrap()),
     "true" => Expr::Bool(true),
     "false" => Expr::Bool(false),
 }
@@ -69,9 +68,8 @@ extern {
     type Error = String;
 
     enum Token {
-        "id" => Token::Id(<String>),
         "int" => Token::Int(<i64>),
-        "float" => Token::Float(<f64>),
+        "id" => Token::Id,
         "true" => Token::True,
         "false" => Token::False,
         "||" => Token::Or,
