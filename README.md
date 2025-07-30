@@ -12,7 +12,7 @@
 
 ---
 
-Very simple liquid type checker for Rust that performs straightforward compile-time checks for integer literals.
+Very simple experimental liquid type checker for Rust that performs straightforward compile-time checks for integer literals.
 Uses Logos and LALRPOP to parse the refinement string into a tiny AST and translates it into SMT formulas using the Z3 SMT solver. 
 
 ### Examples
@@ -38,8 +38,15 @@ use liquid_rust::refinement;
 const X: i32 = 1;
 ```
 
+For example, with the following code, a error clearly appears in your IDE, which does not allow the code to compile:
+
+```rust
+refine!("_ > 0", -1); // error: Value does not satisfy the refinement
+```
+
 ### Limitations
-- Support for integer literals only
+
+- Only supports integer literals
 - Checks made only at variable definition
 - Very limited set of operations
 
