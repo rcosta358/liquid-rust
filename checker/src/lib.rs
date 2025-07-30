@@ -138,5 +138,5 @@ fn value_as_real<'ctx>(ctx: &'ctx Context, value: &syn::Expr) -> Option<Real<'ct
 }
 
 fn from_real<'ctx>(ctx: &'ctx Context, value: i32) -> Real<'ctx> {
-    Real::from_real(ctx, -value, 1)
+    Real::from_real(ctx, value, 1)
 }
