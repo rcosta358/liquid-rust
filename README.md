@@ -5,19 +5,19 @@
 **A toy liquid type checker for Rust**
 
 [![Rust](https://img.shields.io/badge/Built_with-Rust-orange?logo=rust)](https://www.rust-lang.org/)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 ![GitHub repo size](https://img.shields.io/github/repo-size/rcosta358/liquid-rust)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 </div>
 
 ---
 
-Very simple experimental liquid type checker for Rust that performs straightforward compile-time checks for integer literals.
+Very simple liquid type checker for Rust that performs verifications at compile-time for integers.
 Uses Logos and LALRPOP to parse the refinement string into a tiny AST and translates it into SMT formulas using the Z3 SMT solver. 
 
 ### Examples
 
-With the procedural macro `refine!`, it's possible to check if a value satisfies a refinement condition at compile-time:
+With the procedural macro `refine!`, it is possible to check if a value satisfies a refinement condition at compile-time:
 
 ```rust
 use liquid_rust::refine;
@@ -38,7 +38,7 @@ use liquid_rust::refinement;
 const X: i32 = 1;
 ```
 
-For example, with the following code, a error clearly appears in your IDE, which does not allow the code to compile:
+For example, with the following code, an error clearly appears in your IDE, which does not allow the code to compile:
 
 ```rust
 refine!("_ > 0", -1); // error: Value does not satisfy the refinement
@@ -50,6 +50,6 @@ refine!("_ > 0", -1); // error: Value does not satisfy the refinement
 - Checks made only at variable definition
 - Very limited set of operations
 
-<br />
+---
 
 This is not intended for production use, as it is not useful at all - it is just a fun experiment to learn more about this topic.
