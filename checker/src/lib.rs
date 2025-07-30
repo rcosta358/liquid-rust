@@ -53,7 +53,7 @@ fn to_z3<'ctx>(ctx: &'ctx Context, expr: &Expr, var: &Real<'ctx>) -> Result<Bool
                 UnOp::Not => to_z3(ctx, inner, var)?.not(),
                 UnOp::Neg => {
                     let inner_real = to_real(ctx, inner, var);
-                    let zero = Real::from_real(ctx, 0, 1);
+                    let zero = from_real(ctx, 0);
                     inner_real._eq(&zero).not()
                 }
             };
@@ -74,10 +74,10 @@ fn to_z3<'ctx>(ctx: &'ctx Context, expr: &Expr, var: &Real<'ctx>) -> Result<Bool
 fn to_real<'ctx>(ctx: &'ctx Context, expr: &Expr, var: &Real<'ctx>) -> Real<'ctx> {
     match expr {
         Expr::Id => var.clone(),
-        Expr::Int(n) => Real::from_real(ctx, (*n) as i32, 1),
+        Expr::Int(n) => from_real(ctx, (*n) as i32),
         Expr::Unary(UnOp::Neg, inner) => {
             let x = to_real(ctx, inner, var);
-            Real::sub(ctx, &[&Real::from_real(ctx, 0, 1), &x])
+            Real::sub(ctx, &[&from_real(ctx, 0), &x])
         }
         Expr::Binary(left, op, right) => {
             match op {
@@ -109,25 +109,25 @@ fn to_real<'ctx>(ctx: &'ctx Context, expr: &Expr, var: &Real<'ctx>) -> Real<'ctx
                     let floored_r = z3::ast::Int::to_real(&floored_int);
                     Real::sub(ctx, &[&a, &Real::mul(ctx, &[&floored_r, &b])])
                 }
-                _ => Real::from_real(ctx, 0, 1),
+                _ => from_real(ctx, 0)
             }
         }
-        _ => Real::from_real(ctx, 0, 1),
+        _ => from_real(ctx, 0),
     }
 }
 
 fn value_as_real<'ctx>(ctx: &'ctx Context, value: &syn::Expr) -> Option<Real<'ctx>> {
     match value {
         syn::Expr::Lit(lit) => match &lit.lit { // literals
-            syn::Lit::Int(n) => Some(Real::from_real(ctx, n.base10_parse::<i32>().unwrap(), 1)),
+            syn::Lit::Int(n) => Some(from_real(ctx, n.base10_parse::<i32>().unwrap())),
             _ => None,
         },
-        syn::Expr::Unary(expr_unary) => { // negative numbers
-            if let syn::UnOp::Neg(_) = expr_unary.op {
-                if let syn::Expr::Lit(lit) = &*expr_unary.expr {
+        syn::Expr::Unary(expr) => { // negative numbers
+            if let syn::UnOp::Neg(_) = expr.op {
+                if let syn::Expr::Lit(lit) = &*expr.expr {
                     if let syn::Lit::Int(n) = &lit.lit {
                         let val = n.base10_parse::<i32>().unwrap();
-                        return Some(Real::from_real(ctx, -val, 1));
+                        return Some(from_real(ctx, -val));
                     }
                 }
             }
@@ -135,4 +135,8 @@ fn value_as_real<'ctx>(ctx: &'ctx Context, value: &syn::Expr) -> Option<Real<'ct
         }
         _ => None,
     }
+}
+
+fn from_real<'ctx>(ctx: &'ctx Context, value: i32) -> Real<'ctx> {
+    Real::from_real(ctx, -value, 1)
 }
