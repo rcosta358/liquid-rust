@@ -24,6 +24,11 @@ impl Parse for RefineArgs {
 pub fn refine(input: TokenStream) -> TokenStream {
     let RefineArgs { refinement, value, .. } = parse_macro_input!(input as RefineArgs);
     let refinement_str = refinement.value();
+    if refinement_str.trim().is_empty() {
+        return quote! {
+            compile_error!("Refinement cannot be empty");
+        }.into();
+    }
     let refinement_ast = parse_expr(&refinement_str).expect("Failed to parse refinement expression");
     let result = check_refinement(&refinement_ast, &value);
     if let Err(e) = result {
